@@ -289,6 +289,9 @@ bool AP_Mission::verify_command(const Mission_Command& cmd)
     switch (cmd.id) {
         // do-commands always return true for verify:
     case MAV_CMD_DO_GRIPPER:
+    //added
+    case MAV_CMD_DO_PAYLOAD_RELEASE:
+    //added finished
     case MAV_CMD_DO_SET_SERVO:
     case MAV_CMD_DO_SET_RELAY:
     case MAV_CMD_DO_REPEAT_SERVO:
@@ -315,6 +318,12 @@ bool AP_Mission::start_command(const Mission_Command& cmd)
     switch (cmd.id) {
     case MAV_CMD_DO_GRIPPER:
         return start_command_do_gripper(cmd);
+    //added
+    case MAV_CMD_DO_PAYLOAD_RELEASE:
+        gcs().send_text(MAV_SEVERITY_INFO, "PAYLOAD_RELEASE GRIPPER CLOSE");
+        return start_command_do_gripper(cmd);
+    //added finished
+
     case MAV_CMD_DO_SET_SERVO:
     case MAV_CMD_DO_SET_RELAY:
     case MAV_CMD_DO_REPEAT_SERVO:
@@ -959,6 +968,12 @@ MAV_MISSION_RESULT AP_Mission::mavlink_int_to_mission_cmd(const mavlink_mission_
         cmd.content.gripper.num = packet.param1;        // gripper number
         cmd.content.gripper.action = packet.param2;     // action 0=release, 1=grab.  See GRIPPER_ACTION enum
         break;
+    
+    //added
+    case MAV_CMD_DO_PAYLOAD_RELEASE:
+        cmd.content.payload_release.action = packet.param1; //action 0 = disable, 1 = enable
+        break;
+    //added finish
 
     case MAV_CMD_DO_GUIDED_LIMITS:                      // MAV ID: 222
         cmd.p1 = packet.param1;                         // max time in seconds the external controller will be allowed to control the vehicle
@@ -1398,6 +1413,12 @@ bool AP_Mission::mission_cmd_to_mavlink_int(const AP_Mission::Mission_Command& c
         packet.param1 = cmd.content.gripper.num;        // gripper number
         packet.param2 = cmd.content.gripper.action;     // action 0=release, 1=grab.  See GRIPPER_ACTION enum
         break;
+
+    //added 
+    case MAV_CMD_DO_PAYLOAD_RELEASE:
+        packet.param1 = cmd.content.payload_release.action; // action 0 = disable, 1 = enable
+        break;
+    //added finished
 
     case MAV_CMD_DO_GUIDED_LIMITS:                      // MAV ID: 222
         packet.param1 = cmd.p1;                         // max time in seconds the external controller will be allowed to control the vehicle
@@ -2151,6 +2172,12 @@ const char *AP_Mission::Mission_Command::type() const {
         return "Delay";
     case MAV_CMD_DO_GRIPPER:
         return "Gripper";
+
+    //added
+    case MAV_CMD_DO_PAYLOAD_RELEASE:
+        return "Payload release";
+    //added finished
+    
     case MAV_CMD_NAV_PAYLOAD_PLACE:
         return "PayloadPlace";
     case MAV_CMD_DO_PARACHUTE:

@@ -195,7 +195,19 @@ public:
         float release_rate;     // release rate in meters/second
     };
 
+    //added
+    // payload release structure
+    struct PACKED Payload_release {
+        uint8_t action; //action (1 = enable, 0 = disable)
+    };
+    //added finished
+
     union Content {
+        //added
+        // payload_release structure
+        Payload_release payload_release;
+        //added finish
+        
         // jump structure
         Jump_Command jump;
 
