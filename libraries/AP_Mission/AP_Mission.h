@@ -147,10 +147,9 @@ public:
 
     //added
     struct PACKED Payload_Release {
-        float latitude;
-        float longitude;
-        float altitude;
-        bool action;    //action(0 = hold, 1 = throw)
+        uint8_t mass;   //mass of payload
+        float area;     //Cross sectional area of payload
+        float cd;       //coefficent of drag of payload along with parachute
     };
     //add finished
 

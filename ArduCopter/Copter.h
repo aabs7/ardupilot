@@ -230,6 +230,9 @@ public:
     friend class ModeThrow;
     friend class ModeZigZag;
     friend class ModeAutorotate;
+    //added
+    friend class ModePayloadRelease;
+    //add finish
 
     Copter(void);
 
@@ -792,6 +795,7 @@ private:
     // mode_land.cpp
     void set_mode_land_with_pause(ModeReason reason);
     bool landing_with_GPS();
+
 
     // motor_test.cpp
     void motor_test_output();

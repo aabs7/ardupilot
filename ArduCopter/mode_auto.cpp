@@ -22,6 +22,7 @@
 // auto_init - initialise auto controller
 bool ModeAuto::init(bool ignore_checks)
 {
+
     if (mission.num_commands() > 1 || ignore_checks) {
         _mode = Auto_Loiter;
 
@@ -57,6 +58,7 @@ bool ModeAuto::init(bool ignore_checks)
 void ModeAuto::run()
 {
     // call the correct auto controller
+
     switch (_mode) {
 
     case Auto_TakeOff:
@@ -151,19 +153,19 @@ void ModeAuto::payload_release_start(const AP_Mission::Mission_Command& cmd)
     //ap_ahrs_dcm has wind estimate.
     _mode = Auto_PayloadRelease;
 
-    Location home = ahrs.get_home();
-    Location target_loc = loc_from_cmd(cmd);
-    target_loc.alt = target_loc.alt + home.alt;
-
-    gcs().send_text(MAV_SEVERITY_INFO, "target lat,lon,alt = %d,%d,%d",target_loc.lat,target_loc.lng,target_loc.alt);
-    gcs().send_text(MAV_SEVERITY_INFO, "home lat,lon,alt = %d,%d,%d",home.lat,home.lng,home.alt);
-
-
-    // Set wp navigation target
-    if (!wp_nav->set_wp_destination(target_loc)) {
+    //set current state of vehicle as Payload release start.
+    copter.mode_payloadrelease.set_state(ModePayloadRelease::PayloadRelease_Start);
+    //initialise point in ground where payload should be dropped received from mavlink packet
+    copter.mode_payloadrelease.drop_point = loc_from_cmd(cmd);
+    copter.mode_payloadrelease.release_point = copter.mode_payloadrelease.drop_point;
+    //initialise releasing point in ground as (0,0)
+    copter.mode_payloadrelease.release_point_neu.x = 0;
+    copter.mode_payloadrelease.release_point_neu.y = 0;
+    
+    if (!wp_nav->set_wp_destination(copter.mode_payloadrelease.drop_point)) {
         // failure to set destination can only be because of missing terrain data
         copter.failsafe_terrain_on_event();
-        return;
+        return ;
     }
 
     //call regular payload release flight mode initialisation and ask it check intial condition
@@ -1611,7 +1613,12 @@ bool ModeAuto::verify_land()
 bool ModeAuto::verify_payload_release()
 {
     //if verified true
-    return (wp_nav->reached_wp_destination());
+
+    if(wp_nav->reached_wp_destination()){
+        copter.mode_payloadrelease.set_state(ModePayloadRelease::PayloadRelease_Finish);
+        return true;
+    }
+    return false;
 }
 //add finished
 

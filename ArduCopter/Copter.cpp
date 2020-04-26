@@ -469,6 +469,11 @@ void Copter::one_hz_loop()
 #endif
 
     AP_Notify::flags.flying = !ap.land_complete;
+
+    //added
+    mode_payloadrelease.update_releasepoint();
+    //add finish
+
 }
 
 // called at 50hz

@@ -1006,12 +1006,10 @@ MAV_MISSION_RESULT AP_Mission::mavlink_int_to_mission_cmd(const mavlink_mission_
     
     //added
     case MAV_CMD_NAV_PAYLOAD_RELEASE:
-        //cmd.content.payload_release.latitude = packet.param1;
-        //cmd.content.payload_release.longitude = packet.param2;
-        //cmd.content.payload_release.altitude = packet.param3;
-        //gcs().send_text(MAV_SEVERITY_INFO, "param1 = %f ,param2 = %f ,param3 = %f",cmd.content.payload_release.latitude,cmd.content.payload_release.longitude,packet.param3);
-
-        //cmd.content.payload_release.action = packet.param4;
+        cmd.content.payload_release.mass = packet.param1;
+        cmd.content.payload_release.area = packet.param2;
+        cmd.content.payload_release.cd = packet.param3;
+        //gcs().send_text(MAV_SEVERITY_INFO, "param1 = %d ,param2 = %f ,param3 = %f",cmd.content.payload_release.mass,cmd.content.payload_release.area,cmd.content.payload_release.cd);
         break;
     //add finished
 
@@ -1456,11 +1454,9 @@ bool AP_Mission::mission_cmd_to_mavlink_int(const AP_Mission::Mission_Command& c
     
     //Added
     case MAV_CMD_NAV_PAYLOAD_RELEASE:
-        //packet.param1 = cmd.content.payload_release.latitude;     //latitude
-        //packet.param2 = cmd.content.payload_release.longitude;    //longitude
-        //packet.param3 = cmd.content.payload_release.altitude;     //altitude
-        //gcs().send_text(MAV_SEVERITY_INFO, "param1 = %f ,param2 = %f",cmd.content.payload_release.latitude,cmd.content.payload_release.longitude);
-        //packet.param4 = cmd.content.payload_release.action;       //action (1: release, 0: hold)
+        packet.param1 = cmd.content.payload_release.mass;     //mass
+        packet.param2 = cmd.content.payload_release.area;    //area
+        packet.param3 = cmd.content.payload_release.cd;     //cd
         break;
     //Add finished
 
