@@ -12,7 +12,6 @@ bool ModePayloadRelease::init(bool ignore_checks)
 
     return true;
 
-
 }
 
 void ModePayloadRelease::run()
@@ -23,15 +22,6 @@ void ModePayloadRelease::run()
     //copter.failsafe_terrain_set_status(wp_nav->update_wpnav()); //run way point controller
     pos_control->update_z_controller();
     attitude_control->input_euler_angle_roll_pitch_yaw(wp_nav->get_roll(), wp_nav->get_pitch(), auto_yaw.yaw(), true);
-
-    // check_drop_point_llh.x = drop_point.lat;
-    // check_drop_point_llh.y = drop_point.lng;
-    // check_drop_point_llh.z = drop_point.alt;
-    // llh_to_local(drop_point,check_drop_point_neu);
-    // gcs().send_text(MAV_SEVERITY_INFO, "drp_n = %f, drp_e = %f,drp_u = %f",check_drop_point_neu.x,check_drop_point_neu.y,check_drop_point_neu.z);
-    // local_to_llh(check_drop_point_neu,check_drop_point);
-    // gcs().send_text(MAV_SEVERITY_INFO, "drp_lat = %d, drp_lng = %d,drp_alt = %d ",check_drop_point.lat,check_drop_point.lng,check_drop_point.alt);
-    // gcs().send_text(MAV_SEVERITY_INFO, "exact_lat = %d, exact_lng = %d,exact_alt = %d \r\n",drop_point.lat,drop_point.lng,drop_point.alt);
 
 }
 
@@ -154,7 +144,7 @@ void ModePayloadRelease::local_to_llh(Vector3d &current_neu, Location &current_l
 
     current_llh.lat = v_current_llh.x * RAD_TO_DEG * 1.0e7f;
     current_llh.lng = v_current_llh.y * RAD_TO_DEG * 1.0e7f;
-    current_llh.alt = drop_point.alt;//v_current_llh.z * 1.0e2f; //in cms
+    current_llh.alt = drop_point.alt; //same altitude as drop_point altitude
 }
 
 
