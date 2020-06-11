@@ -31,7 +31,7 @@ void ModePayloadRelease::initialise_initial_condition() {
     vz = 0;
     az = g;
     z = 0;
-    total_height = copter.current_loc.alt / 10; // divided by 10 because current altitude in cms.
+    total_height = copter.current_loc.alt / 100; // divided by 10 because current altitude in cms.
     remaining_height = total_height;
     vx = AP::gps().ground_speed();
     ax = 0;
@@ -44,10 +44,10 @@ void ModePayloadRelease::initialise_initial_condition() {
 
     airspeed_uav = 5;
 
-    //llh_to_local(drop_point,drop_point_neu);
+    llh_to_neu(drop_point,drop_point_neu);
     //intialize wind values
     wind_speed_north = 0;
-    wind_speed_east = 0;
+    wind_speed_east = -100;
     wind_speed_normalized = sqrt((wind_speed_east*wind_speed_east) + (wind_speed_north*wind_speed_north));
     //Perform initial calculation to initialize values
     theta = wrap_2PI((copter.flightmode->wp_bearing() / 100) * DEG_TO_RAD) ;  //calculate heading in radian
@@ -113,17 +113,25 @@ void ModePayloadRelease::calculate_release_point() {
         release_point_neu.z = drop_point_neu.z;
     }
     //If the relative payload path is above the uav path
-    else if(theta - phi > 0.001) {
+    else if(theta - phi < 0.001) {
         release_point_neu.x = drop_point_neu.x - x * cos(theta + a * dirn);
         release_point_neu.y = drop_point_neu.y - x * sin(theta + a * dirn);
         release_point_neu.z = drop_point_neu.z;
     }
     //If the relative payload path is below the uav path OR no wind is blowing
-    else if((phi - theta > 0.001) || phi <= 0.001) {
+    else if((theta - phi > 0.001) || phi <= 0.001) {
         release_point_neu.x = drop_point_neu.x - x * cos(theta - a * dirn);
         release_point_neu.y = drop_point_neu.y - x * sin(theta - a * dirn);
         release_point_neu.z = drop_point_neu.z;
     }
+}
+
+void ModePayloadRelease::get_intermediate_point(Vector3d RP){
+    Vector3d int_point_neu;
+    int_point_neu.x = RP.x + intermediate_distance * cos(theta);
+    int_point_neu.y = RP.y + intermediate_distance * sin(theta);
+    int_point_neu.z = RP.z;
+    neu_to_llh(int_point_neu,int_point);
 }
 
 void ModePayloadRelease::llh_to_ecef(Location &current_llh,Vector3d &current_ecef) {
@@ -203,20 +211,18 @@ void ModePayloadRelease::neu_to_llh(Vector3d &current_neu, Location &current_llh
 void ModePayloadRelease::update_releasepoint() {
     if(state() == PayloadRelease_Start) {
         if(!calculated && AP::gps().ground_speed() > 3.5) {
-            gcs().send_text(MAV_SEVERITY_INFO, "drop lat = %d, drop lon = %d,drop ht =%d",drop_point.lat,drop_point.lng,drop_point.alt);
-            //gcs().send_text(MAV_SEVERITY_INFO, "inside here");
-            //initialise_initial_condition();
-            //gcs().send_text(MAV_SEVERITY_INFO, "drop N = %f, drop E = %f",drop_point_neu.x,drop_point_neu.y);
-            //calculate_displacement();
-            //gcs().send_text(MAV_SEVERITY_INFO, "displacement = %f",x);
-            //calculate_release_point();
-            llh_to_neu(drop_point,drop_point_neu);
-            calculated = true;
-            //gcs().send_text(MAV_SEVERITY_INFO, "rel N = %f, rel E = %f",release_point_neu.x,release_point_neu.y);
-            gcs().send_text(MAV_SEVERITY_INFO, "N = %f, E = %f,U = %f",drop_point_neu.x,drop_point_neu.y,drop_point_neu.z);
 
-            neu_to_llh(drop_point_neu,release_point);
-            gcs().send_text(MAV_SEVERITY_INFO, "drop lat = %d, drop lon = %d,drop ht =%d",release_point.lat,release_point.lng,release_point.alt);
+            initialise_initial_condition();
+            gcs().send_text(MAV_SEVERITY_INFO, "drop N = %f, drop E = %f",drop_point_neu.x,drop_point_neu.y);
+            calculate_displacement();
+            gcs().send_text(MAV_SEVERITY_INFO, "displacement = %f",x);
+            
+            calculate_release_point();
+            calculated = true;
+            
+            neu_to_llh(release_point_neu,release_point);
+            gcs().send_text(MAV_SEVERITY_INFO,"dist = %f",get_norm());
+            gcs().send_text(MAV_SEVERITY_INFO, "Rp N = %f, Rp E = %f,Rp H =%f",release_point_neu.x,release_point_neu.y,release_point_neu.z);
 
             if (!wp_nav->set_wp_destination(release_point)) {
                 // failure to set destination can only be because of missing terrain data

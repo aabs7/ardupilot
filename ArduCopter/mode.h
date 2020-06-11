@@ -1232,10 +1232,8 @@ public:
     //point where payload should be released to reach drop point
     Location release_point;
     Vector3d release_point_neu;
-
-    //Vector3d check_drop_point_llh;
-    //Vector3d check_drop_point_neu;
-    //Location check_drop_point;
+    int intermediate_distance;
+    Location int_point;
 
 
     bool init(bool ignore_checks) override;
@@ -1254,6 +1252,13 @@ public:
     void ecef_to_llh(Vector3d &current_neu, Location &current_llh);
     void llh_to_neu(Location &current_llh, Vector3d &current_neu);
     void neu_to_llh(Vector3d &current_neu, Location &current_llh);
+    void get_intermediate_point(Vector3d RP);
+    inline float get_norm(){
+        float o,p;
+        o = drop_point_neu.x - release_point_neu.x;
+        p = drop_point_neu.y - release_point_neu.y;
+        return sqrt(o * o + p * p);
+    }
     void calculate_release_point();
     
 protected:
