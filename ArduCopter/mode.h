@@ -1226,6 +1226,7 @@ public:
         PayloadRelease_Finish
     };
     //point where payload should be dropped
+
     Location drop_point;
     Vector3d drop_point_neu;
     //point where payload should be released to reach drop point
@@ -1249,8 +1250,10 @@ public:
     PayloadReleaseState state() {return _state;}
     void initialise_initial_condition();
     void calculate_displacement();
-    void llh_to_local(Location &current_llh, Vector3d &current_neu);
-    void local_to_llh(Vector3d &current_neu, Location &current_llh);
+    void llh_to_ecef(Location &current_llh,Vector3d &current_ecef);
+    void ecef_to_llh(Vector3d &current_neu, Location &current_llh);
+    void llh_to_neu(Location &current_llh, Vector3d &current_neu);
+    void neu_to_llh(Vector3d &current_neu, Location &current_llh);
     void calculate_release_point();
     
 protected:
