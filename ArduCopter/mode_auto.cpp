@@ -161,7 +161,8 @@ void ModeAuto::payload_release_start(const AP_Mission::Mission_Command& cmd)
     //initialise releasing point in ground as (0,0)
     copter.mode_payloadrelease.release_point_neu.x = 0;
     copter.mode_payloadrelease.release_point_neu.y = 0;
-    
+    copter.mode_payloadrelease.int_point = copter.mode_payloadrelease.drop_point;
+
     if (!wp_nav->set_wp_destination(copter.mode_payloadrelease.drop_point)) {
         // failure to set destination can only be because of missing terrain data
         copter.failsafe_terrain_on_event();
@@ -1614,7 +1615,8 @@ bool ModeAuto::verify_payload_release()
 {
     //if verified true
 
-    if(wp_nav->reached_wp_destination()){
+    if(copter.mode_payloadrelease.is_int_reached && wp_nav->reached_wp_destination()){
+        gcs().send_text(MAV_SEVERITY_INFO,"Release point reached");
         copter.mode_payloadrelease.set_state(ModePayloadRelease::PayloadRelease_Finish);
         return true;
     }

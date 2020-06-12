@@ -1217,6 +1217,8 @@ public:
         fdx = 0;
         fdz = 0;
         calculated = false;
+        intermediate_distance = 30;
+        is_int_reached = false;
     }
     
     // This is for payload release state. 
@@ -1232,9 +1234,11 @@ public:
     //point where payload should be released to reach drop point
     Location release_point;
     Vector3d release_point_neu;
-    int intermediate_distance;
+    
+    // These variables are for intermediate point 
     Location int_point;
-
+    bool is_int_reached;
+    int intermediate_distance;
 
     bool init(bool ignore_checks) override;
     void run() override;

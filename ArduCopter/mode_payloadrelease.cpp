@@ -128,9 +128,16 @@ void ModePayloadRelease::calculate_release_point() {
 
 void ModePayloadRelease::get_intermediate_point(Vector3d RP){
     Vector3d int_point_neu;
-    int_point_neu.x = RP.x + intermediate_distance * cos(theta);
-    int_point_neu.y = RP.y + intermediate_distance * sin(theta);
+    Vector3d current_neu;
+
+    llh_to_neu(copter.current_loc,current_neu);
+
+    float angle = copter.current_loc.get_bearing_to(drop_point) * 0.01f * DEG_TO_RAD;
+
+    int_point_neu.x = RP.x - intermediate_distance * cos(angle);
+    int_point_neu.y = RP.y - intermediate_distance * sin(angle);
     int_point_neu.z = RP.z;
+
     neu_to_llh(int_point_neu,int_point);
 }
 
@@ -153,6 +160,7 @@ void ModePayloadRelease::ecef_to_llh(Vector3d &current_ecef, Location &current_l
 
     current_llh.lat = v_current_llh.x * RAD_TO_DEG * 1.0e7f;
     current_llh.lng = v_current_llh.y * RAD_TO_DEG * 1.0e7f;
+    //current_llh.alt = v_current_llh.z * 1.0e2f; //in cm
     current_llh.alt = drop_point.alt; //same altitude as drop_point altitude
 }
 
@@ -165,11 +173,11 @@ void ModePayloadRelease::llh_to_neu(Location &current_llh, Vector3d &current_neu
     llh_to_ecef(current_llh,current_ecef);
     llh_to_ecef(home,home_ecef);
 
-    cLat = cos(home.lat * DEG_TO_RAD);
-    sLat = sin(home.lat * DEG_TO_RAD);
+    cLat = cos(home.lat * 1.0e-7f * DEG_TO_RAD);
+    sLat = sin(home.lat * 1.0e-7f * DEG_TO_RAD);
 
-    cLon = cos(home.lng * DEG_TO_RAD);
-    sLon = sin(home.lng * DEG_TO_RAD);
+    cLon = cos(home.lng * 1.0e-7f * DEG_TO_RAD);
+    sLon = sin(home.lng * 1.0e-7f * DEG_TO_RAD);
 
     dx = current_ecef.x - home_ecef.x;
     dy = current_ecef.y - home_ecef.y;
@@ -190,11 +198,11 @@ void ModePayloadRelease::neu_to_llh(Vector3d &current_neu, Location &current_llh
     
     llh_to_ecef(home,home_ecef);
 
-    cLat = cos(home.lat * DEG_TO_RAD);
-    sLat = sin(home.lat * DEG_TO_RAD);
+    cLat = cos(home.lat * 1.0e-7f * DEG_TO_RAD);
+    sLat = sin(home.lat * 1.0e-7f * DEG_TO_RAD);
 
-    cLon = cos(home.lng * DEG_TO_RAD);
-    sLon = sin(home.lng * DEG_TO_RAD);
+    cLon = cos(home.lng * 1.0e-7f * DEG_TO_RAD);
+    sLon = sin(home.lng * 1.0e-7f * DEG_TO_RAD);
 
     n = current_neu.x;
     e = current_neu.y;
@@ -210,19 +218,35 @@ void ModePayloadRelease::neu_to_llh(Vector3d &current_neu, Location &current_llh
 
 void ModePayloadRelease::update_releasepoint() {
     if(state() == PayloadRelease_Start) {
-        if(!calculated && AP::gps().ground_speed() > 3.5) {
+        if(!calculated && AP::gps().ground_speed() > 4.0) {
 
             initialise_initial_condition();
-            gcs().send_text(MAV_SEVERITY_INFO, "drop N = %f, drop E = %f",drop_point_neu.x,drop_point_neu.y);
+            //gcs().send_text(MAV_SEVERITY_INFO, "drop lat = %d, drop lng = %d, drop alt = %d",drop_point.lat,drop_point.lng,drop_point.alt);
+            //gcs().send_text(MAV_SEVERITY_INFO, "drop N = %f, drop E = %f,drop H = %f",drop_point_neu.x,drop_point_neu.y,drop_point_neu.z);
+            
             calculate_displacement();
-            gcs().send_text(MAV_SEVERITY_INFO, "displacement = %f",x);
             
             calculate_release_point();
+
+            get_intermediate_point(release_point_neu);
             calculated = true;
             
             neu_to_llh(release_point_neu,release_point);
-            gcs().send_text(MAV_SEVERITY_INFO,"dist = %f",get_norm());
-            gcs().send_text(MAV_SEVERITY_INFO, "Rp N = %f, Rp E = %f,Rp H =%f",release_point_neu.x,release_point_neu.y,release_point_neu.z);
+            //gcs().send_text(MAV_SEVERITY_INFO,"dist = %f",get_norm());
+            
+            //gcs().send_text(MAV_SEVERITY_INFO, "Rp N = %f, Rp E = %f,Rp H =%f",release_point_neu.x,release_point_neu.y,release_point_neu.z);
+            //gcs().send_text(MAV_SEVERITY_INFO, "RP lat = %d, RP lng = %d, RP alt = %d",release_point.lat,release_point.lng,release_point.alt);
+            gcs().send_text(MAV_SEVERITY_INFO,"set int point");
+            if (!wp_nav->set_wp_destination(int_point)) {
+                // failure to set destination can only be because of missing terrain data
+                copter.failsafe_terrain_on_event();
+                return ;
+            }
+        }
+
+        if(!is_int_reached && wp_nav->reached_wp_destination()){
+            is_int_reached = true;
+            gcs().send_text(MAV_SEVERITY_INFO,"int point reached");
 
             if (!wp_nav->set_wp_destination(release_point)) {
                 // failure to set destination can only be because of missing terrain data
@@ -230,5 +254,6 @@ void ModePayloadRelease::update_releasepoint() {
                 return ;
             }
         }
+
     }
 }
